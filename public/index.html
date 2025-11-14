@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Le Non-Gaspillage — Service Restaurants</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    :root{
+      --green-1: #2ecc71;
+      --green-2: #27ae60;
+      --muted: #6c757d;
+      --card-radius: 16px;
+    }
+
+    html,body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, "Helvetica Neue", Arial;
+      background: linear-gradient(135deg, rgba(39,174,96,0.95) 0%, rgba(46,204,113,0.95) 100%);
+      color: #083019;
+    }
+
+    /* Header */
+    .site-header {
+      backdrop-filter: blur(6px);
+      background: rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .brand-logo {
+      width: 56px;
+      height: 56px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.12);
+      border: 1px dashed rgba(255,255,255,0.18);
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    .brand-title { color: #fff; font-weight: 700; margin-left: 12px; }
+
+    /* Main container card */
+    .shell {
+      max-width: 1100px;
+      margin: 48px auto;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(250,250,250,0.96));
+      border-radius: 20px;
+      padding: 36px;
+      box-shadow: 0 12px 30px rgba(6,25,18,0.18);
+    }
+
+    .hero {
+      text-align: center;
+      padding: 18px 8px 28px 8px;
+    }
+    .hero h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+      color: #0b3a2a;
+    }
+    .hero p.lead {
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    /* Cards */
+    .card {
+      border: none;
+      border-radius: var(--card-radius);
+      transition: transform .22s ease, box-shadow .22s ease;
+    }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 18px 36px rgba(8,58,42,0.12); }
+    .card .card-body { padding: 28px; }
+    .card-icon {
+      width: 78px;
+      height: 78px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, rgba(39,174,96,0.12), rgba(46,204,113,0.12));
+      border: 1px solid rgba(39,174,96,0.08);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid rgba(3,58,26,0.06);
+    }
+
+    /* Footer */
+    footer.site-footer {
+      margin-top: 28px;
+      color: #e9f7ef;
+    }
+    .footer-card {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.9);
+    }
+    .small-muted { color: rgba(255,255,255,0.75); }
+
+    /* Responsive tweaks */
+    @media (max-width: 768px){
+      .hero h1 { font-size: 22px; }
+      .shell { margin: 24px 18px; padding: 20px; }
+    }
+    .card {
+  background: #fff;          /* White card background */
+  color: #333;               /* Dark text inside card */
+}
+
+.card h5 {
+  color: #1b3a2a;            /* Dark heading specifically */
+}
+
+.card p, .card a {
+  color: #333;               /* Paragraphs and links */
+}
+
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header py-3">
+    <div class="container d-flex align-items-center justify-content-between">
+      <div class="d-flex align-items-center">
+        <!-- Logo placeholder: replace <div class="brand-logo"> with <img src="logo.png"> when you have a logo -->
+        <div class="brand-logo" aria-hidden="true">
+          <!-- empty logo placeholder (letters NG = Non Gaspillage) -->
+          NG
+        </div>
+        <div class="brand-title ms-2">
+          Le Non-Gaspillage
+          <div style="font-size:12px; color: rgba(255,255,255,0.75); font-weight:500;">Quand on va au restaurant</div>
+        </div>
+      </div>
+
+      <nav class="d-none d-md-flex gap-3 align-items-center">
+        <a class="btn btn-sm btn-outline-light" href="/paiment">Je vais au restaurant</a>
+        <a class="btn btn-sm btn-outline-light" href="/proposition">Propositions</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main shell -->
+  <main class="shell">
+    <!-- Hero -->
+    <section class="hero">
+      <h1>Stop au gaspillage alimentaire au restaurant</h1>
+      <p class="lead">Un service simple pour payer juste ce que vous consommez, favoriser les portions responsables et réduire le gaspillage. Ensemble, sauvons des repas.</p>
+
+      <div class="d-flex justify-content-center gap-2">
+        <a href="/paiment" class="btn btn-success btn-lg">Je vais au restaurant</a>
+        <a href="/proposition" class="btn btn-outline-secondary btn-lg">Donnez votre avis</a>
+      </div>
+    </section>
+
+    <!-- Cards -->
+    <section class="py-4">
+      <div class="row gx-4 gy-4 justify-content-center">
+        <!-- Je vais au restaurant -->
+        <div class="col-12 col-md-4">
+          <article id="resto" class="card">
+            <div class="card-body text-center">
+              <div class="card-icon mx-auto">
+                <!-- restaurant svg -->
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M7 2v10" stroke="#1b6b3f" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M10 2v10" stroke="#1b6b3f" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M3 13c0 3.314 2.686 6 6 6h6c3.314 0 6-2.686 6-6" stroke="#1b6b3f" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <h5 class="mt-2">Je vais au restaurant</h5>
+              <p class="small-muted">Lancez un paiement transparent, choisissez la portion responsable et réduisez le surplus.</p>
+              <a class="btn btn-success mt-2" href="/paiment">Commencer</a>
+            </div>
+          </article>
+        </div>
+
+        <!-- Sondage -->
+        <div class="col-12 col-md-4">
+          <article id="sondage" class="card">
+            <div class="card-body text-center">
+              <div class="card-icon mx-auto">
+                <!-- survey svg -->
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="3" y="4" width="18" height="16" rx="2" stroke="#1b6b3f" stroke-width="1.2" fill="rgba(39,174,96,0.06)"/>
+                  <path d="M7 8h6M7 12h10M7 16h4" stroke="#1b6b3f" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <h5 class="mt-2">Sondage</h5>
+              <p class="small-muted">Partagez votre expérience : portions, qualité, recommandations pour réduire le gaspillage.</p>
+              <a class="btn btn-warning mt-2" href="/proposition">Participer</a>
+            </div>
+          </article>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Optional extra info row -->
+    <section class="mt-4 pt-3 border-top">
+      <div class="row align-items-center">
+        <div class="col-md-8">
+          <h6 style="color:#0b3a2a; margin-bottom:6px;">Pourquoi c'est important ?</h6>
+          <p class="small-muted mb-0">Chaque année, des tonnes de nourriture sont gaspillées dans la restauration. En adoptant des portions adaptées, en permettant des paiements plus justes et en sensibilisant les convives, nous réduisons l'empreinte alimentaire et aidons les restaurants à mieux gérer leur offre.</p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+          <a class="btn btn-outline-success" href="#" role="button">Nos engagements</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer py-4">
+    <div class="container">
+      <div class="row gy-3">
+        <div class="col-md-4">
+          <div class="footer-card">
+            <!-- logo placeholder small -->
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;">NG</div>
+              <div>
+                <strong>Le Non-Gaspillage</strong><br>
+                <small class="small-muted">Quand on va au restaurant</small>
+              </div>
+            </div>
+            <p class="mt-3 small-muted">Plateforme dédiée à la réduction du gaspillage alimentaire dans la restauration.</p>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="footer-card">
+            <h6 style="color:#fff;">Liens utiles</h6>
+            <ul class="list-unstyled small-muted mb-0">
+              <li><a href="#info" class="text-white text-decoration-none">Informations</a></li>
+              <li><a href="#resto" class="text-white text-decoration-none">Je vais au restaurant</a></li>
+              <li><a href="#sondage" class="text-white text-decoration-none">Sondage</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="footer-card">
+            <h6 style="color:#fff;">Contact</h6>
+            <p class="small-muted mb-2">contact@lennongaspillage.example</p>
+
+            <form class="d-flex gap-2" onsubmit="event.preventDefault(); alert('Merci — fonctionnalité demo');">
+              <input type="email" class="form-control form-control-sm" placeholder="Votre e-mail" required>
+              <button class="btn btn-sm btn-light">S'inscrire</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="row mt-3">
+        <div class="col-12 text-center small-muted">
+          © <span id="year"></span> Le Non-Gaspillage — Tous droits réservés • <a href="#" class="text-white">Politique de confidentialité</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // set year
+    document.getElementById('year').innerText = new Date().getFullYear();
+  </script>
+</body>
+</html>

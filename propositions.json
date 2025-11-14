@@ -1,0 +1,26 @@
+[
+  {
+    "id": "1763153107906",
+    "nom": "Mohanned Bentaleb",
+    "carteEtudiant": "1254847",
+    "proposition": "prop",
+    "date": "2025-11-14T20:45:07.881Z",
+    "approved": true
+  },
+  {
+    "id": "1763153250551",
+    "nom": "Mohanned Bentaleb",
+    "carteEtudiant": "1254847",
+    "proposition": "mlzfnsbdj",
+    "date": "2025-11-14T20:47:30.547Z",
+    "approved": true
+  },
+  {
+    "id": "1763154406880",
+    "nom": "Mohanned Bentaleb",
+    "carteEtudiant": "1254847",
+    "proposition": "ldsmv,nsdv",
+    "date": "2025-11-14T21:06:46.881Z",
+    "approved": false
+  }
+]

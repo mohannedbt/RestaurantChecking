@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="bg-green-700 text-white py-4 shadow-md">
+    <div class="container mx-auto flex justify-between items-center px-6">
+      <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+      <div>
+        <button class="bg-white text-green-700 font-semibold px-4 py-2 rounded hover:bg-gray-200" onclick="localStorage.clear();window.location.href='/logout'">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="container mx-auto px-6 mt-10">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- Student Payments Card -->
+      <div class="bg-white shadow-lg rounded-xl p-6 border-l-8 border-green-700 hover:shadow-2xl transition duration-300">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Student Payments</h2>
+        <p class="text-gray-600 mb-6">View all student payment transactions, track status, and manage invoices.</p>
+        <button class="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600 transition" onclick="window.location.href='/admin/paiment'">Go to Payments</button>
+      </div>
+
+      <!-- Recommendations Card -->
+      <div class="bg-white shadow-lg rounded-xl p-6 border-l-8 border-yellow-500 hover:shadow-2xl transition duration-300">
+        <h2 class="text-xl font-bold text-gray-800 mb-4">Recommendations</h2>
+        <p class="text-gray-600 mb-6">Check student recommendations, approve, or provide feedback on submissions.</p>
+        <button class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-400 transition" onclick="window.location.href='/admin/proposition'">Go to Recommendations</button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-20 text-center text-gray-500 text-sm py-6">
+    &copy; 2025 Restaurant Admin
+  </footer>
+<script>
+    if (localStorage.getItem('isAdmin') !== 'true') {
+        window.location.href = "/admin";
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Payments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <header class="bg-green-700 text-white py-4 shadow-md">
+    <div class="container mx-auto px-6">
+      <h1 class="text-2xl font-bold">Admin Dashboard - Payments</h1>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 mt-10">
+    <div class="bg-white shadow-lg rounded-xl p-6 border-l-8 border-green-700">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Non-Paying Students</h2>
+      <div id="payments-container" class="space-y-4">
+        <!-- Payment items will be inserted here dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-20 text-center text-gray-500 text-sm py-6">
+    &copy; 2025 Restaurant Admin
+  </footer>
+
+<script>
+async function loadPayments() {
+  const res = await fetch("/admin/payments");
+  const nonPaid = await res.json();
+  const container = document.getElementById("payments-container");
+  container.innerHTML = "";
+
+  if (nonPaid.length === 0) {
+    container.innerHTML = "<p>All students have paid!</p>";
+    return;
+  }
+
+  nonPaid.forEach(op => {
+    const card = document.createElement("div");
+    card.className = "flex justify-between items-center p-4 border rounded shadow-sm bg-gray-50";
+    card.innerHTML = `
+      <div>
+        <p><strong>Carte:</strong> ${op.carteEtudiant}</p>
+        <p><strong>Date:</strong> ${new Date(op.date).toLocaleString()}</p>
+        <p><strong>Amount:</strong> ${op.montant} dt</p>
+        <p><strong>Email:</strong> ${op.email}</p>
+      </div>
+      <div>
+        <button class="confirm-btn bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500" data-id="${op.id}">
+          Confirm Payment
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+
+  document.querySelectorAll(".confirm-btn").forEach(btn => {
+    btn.addEventListener("click", async e => {
+  const id = e.target.dataset.id;
+  const res = await fetch("/admin/confirm-payment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }) // no email needed
+  });
+  const result = await res.json();
+  alert(result.message);
+  loadPayments(); // refresh list
+});
+
+  });
+}
+
+loadPayments();
+</script>
+
+</body>
+</html>
