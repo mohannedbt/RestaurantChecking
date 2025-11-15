@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - AI Menu Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+  <header class="bg-green-700 text-white py-4 shadow-md">
+    <div class="container mx-auto px-6 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">AI Menu Generator</h1>
+      <a href="/admin/dashboard" class="bg-white text-green-700 px-3 py-1 rounded hover:bg-gray-200">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="container mx-auto px-6 mt-10">
+    <div class="bg-white shadow-lg rounded-xl p-6 border-l-8 border-blue-700">
+      <h2 class="text-xl font-bold text-gray-800 mb-4">Menu généré par AI</h2>
+      <div id="menu-result" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <p id="menu-output" class="col-span-full text-gray-600">Cliquez sur "Générer Menu AI" pour créer un menu à partir des propositions.</p>
+      </div>
+
+      <div class="mt-6 flex gap-3">
+        <button id="generateMenuBtn" class="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600">
+          Générer Menu AI
+        </button>
+        <button id="approveMenuBtn" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600">
+          Approuver Menu
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="mt-20 text-center text-gray-500 text-sm py-6">
+    &copy; 2025 MountaRestorant
+  </footer>
+<script>
+const generateBtn = document.getElementById("generateMenuBtn");
+const approveBtn = document.getElementById("approveMenuBtn");
+const menuResult = document.getElementById("menu-result");
+
+let currentMenuItems = []; // store generated items
+
+async function fetchPropositions() {
+  const res = await fetch("/admin/propositions");
+  const propositions = await res.json();
+  return propositions.map(p => p.proposition).join(". ");
+}
+
+async function generateMenu() {
+  try {
+    const res = await fetch("/admin/generate-menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: "Generate a restaurant menu for today using approved propositions. Include images."
+      })
+    });
+    const data = await res.json();
+    alert('AI menu generated: ' + JSON.stringify(data));
+  } catch(err) {
+    console.error(err);
+    alert('Failed to generate menu.');
+  }
+
+
+}
+// Generate menu on button click
+generateBtn.addEventListener("click", generateMenu);   
+
+// Approve menu and save to JSON
+approveBtn.addEventListener("click", async () => {
+  if (!currentMenuItems.length) return alert("Générez d'abord le menu !");
+  const res = await fetch("/admin/approve-menu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ menu: currentMenuItems })
+  });
+  const result = await res.json();
+  alert(result.message);
+});
+</script>
+
+
+</body>
+</html>

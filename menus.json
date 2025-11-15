@@ -1,0 +1,10 @@
+[
+  {
+    "date": "2025-11-15",
+    "menu": [
+      { "name": "Pizza Margherita", "description": "Tomato, mozzarella, basil", "image": "https://source.unsplash.com/600x400/?pizza" },
+      { "name": "Spaghetti Carbonara", "description": "Pasta with eggs, cheese, pancetta", "image": "https://source.unsplash.com/600x400/?spaghetti" },
+      { "name": "Tiramisu", "description": "Coffee-flavored Italian dessert", "image": "https://source.unsplash.com/600x400/?tiramisu" }
+    ]
+  }
+]
