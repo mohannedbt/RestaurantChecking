@@ -39,32 +39,38 @@ app.use(bodyParser.json());
 
 // Load all menus
 function loadMenus() {
-  const file = path.join(__dirname, "menus.json");
+  const file = path.join(__dirname, "menu.json");
   if (!fs.existsSync(file)) return [];
   return JSON.parse(fs.readFileSync(file, "utf8"));
 }
 
 // Save menus
 function saveMenus(data) {
-  const file = path.join(__dirname, "menus.json");
+  const file = path.join(__dirname, "menu.json");
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
-
-// Send today’s menu to student interface
 app.get("/api/menu/today", (req, res) => {
   const menus = loadMenus();
+  console.log("Loaded menus:", menus);
   const today = new Date().toISOString().slice(0, 10);
   console.log("Today's date:", today);
-
   const todayMenu = menus.find(m => m.date === today);
-
-
+  console.log("Today's menu:", todayMenu);
   if (!todayMenu) {
     return res.status(404).json({ message: "No menu available for today." });
   }
 
-  res.json(todayMenu);
+  // Send no-cache headers
+  res.setHeader("Cache-Control", "no-store");
+
+  // Return menu as an array of names
+  res.json({
+    date: todayMenu.date,
+    menu: todayMenu.menu
+  });
 });
+
+
 // Serve static files from the "public" folder
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -159,81 +165,97 @@ app.get("/admin/menu", (req, res) => {
 
 app.use(bodyParser.json());
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const { HfInference } = require("@huggingface/inference");
+const LOCAL_AI_URL = "http://127.0.0.1:8000/chat";
 
-const hf = new HfInference(); // you can leave token empty for free inference, but rate-limited
+// Default Tunisian menu categories in French
 
 app.post("/admin/generate-menu", async (req, res) => {
-  const prompt = req.body.text || "Generate a restaurant menu for today with 3 starters, 3 mains, 2 desserts";
-
-  // First try OpenAI
   try {
-    const openAIResp = await fetch("https://api.openai.com/v1/completions", {
+    // Build the prompt for the AI
+    const prompt = `
+Génère un menu pour aujourd'hui à partir de cette liste :
+- Entrées : salade mechwiya, salade normale
+- Plats principaux : macaronis, couscous, riz + fromage, oeuf, poulet, viande de mouton
+- Desserts : yaourt, fruits de saison, cake
+
+Règles :
+1. Choisis exactement une entrée, un plat principal et un dessert selon une combinaison réaliste.
+2. Mets uniquement le nom des plats en gras avec <b></b>.
+3. Ne mets aucun lien HTML ni prix.
+4. Ne mets aucune description.
+Exemple attendu(le suit  sans modification):
+  "entree": "<b>Salade Mechwiya</b>",
+  "plat": "<b>Couscous au poulet</b>",
+  "dessert": "<b>Yaourt</b>"
+
+`;
+
+    // Call your local AI
+    const response = await fetch(LOCAL_AI_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "text-davinci-003", // or "gpt-3.5-turbo" if available
-        prompt: prompt,
-        max_tokens: 200,
-        temperature: 0.7
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({  message: prompt })
     });
 
-    const openAIData = await openAIResp.json();
+    const data = await response.json();
+    let menuText = data.reply || "";
 
-    if(openAIData.error && openAIData.error.code === "insufficient_quota") {
-      throw new Error("OpenAI quota exceeded");
-    }
+    // Replace any ****text**** with <b>text</b> just in case
+    menuText = menuText.replace(/\*{4}(.*?)\*{4}/g, "<b>$1</b>");
 
-    return res.json({ menuText: openAIData.choices[0].text.trim() });
-
-  } catch (err) {
-    console.log("OpenAI failed, falling back to Hugging Face:", err.message);
-
+    // Try to parse AI output as JSON
+    let menuJSON;
     try {
-      const hfResp = await hf.textGeneration({
-        model: "tiiuae/falcon-7b-instruct", // small, free HF model
-        inputs: prompt,
-        parameters: { max_new_tokens: 150 }
-      });
-
-      const hfText = hfResp.generated_text || hfResp[0].generated_text;
-      return res.json({ menuText: hfText.trim() });
-
-    } catch(hfErr) {
-      console.error("Hugging Face fallback also failed:", hfErr);
-      return res.status(500).json({ error: "Failed to generate menu with both AI providers" });
+      menuJSON = JSON.parse(menuText);
+    } catch {
+      // Fallback: wrap the text as a single field
+      menuJSON = { menu: menuText };
     }
+
+    res.json({ menu: menuJSON });
+
+  }catch (err) {
+    console.error("Erreur lors de la génération du menu :", err);
+    res.status(500).json({ error: "Échec de la génération du menu via l'AI locale" });
   }
 });
-
 
 // Route to approve and save menu
 
 app.post("/admin/approve-menu", (req, res) => {
   const { menu } = req.body;
+  console.log(menu) // menu is an array of dish names: ["Salade Mechwiya", "Couscous au poulet", "Yaourt"]
   if (!menu || !menu.length) return res.status(400).json({ message: "Menu vide !" });
 
-  const filePath = path.join(__dirname, "menu-approved.json");
-  let approvedMenus = [];
+  const filePath = path.join(__dirname, "menu.json");
+  let allMenus = [];
 
+  // Load existing menus
   if (fs.existsSync(filePath)) {
     const data = fs.readFileSync(filePath, "utf8").trim();
-    if (data) approvedMenus = JSON.parse(data);
+    if (data) allMenus = JSON.parse(data);
   }
 
-  approvedMenus.push({
-    date: new Date().toISOString(),
-    menu
-  });
+  const today = new Date().toISOString().slice(0, 10);
 
-  fs.writeFileSync(filePath, JSON.stringify(approvedMenus, null, 2));
-  res.json({ message: "Menu approuvé et enregistré !" });
+  // Check if today's menu exists
+  const todayIndex = allMenus.findIndex(m => m.date === today);
+  if (todayIndex >= 0) {
+    // Overwrite today's menu
+    allMenus[todayIndex].menu = menu;
+  } else {
+    // Add new menu
+    allMenus.push({
+      date: today,
+      menu
+    });
+  }
+
+  // Save menus
+  fs.writeFileSync(filePath, JSON.stringify(allMenus, null, 2));
+
+  res.json({ message: "Menu approuvé et enregistré !", menu });
 });
 // Route to submit a proposition
 app.post("/submit-proposition", (req, res) => {

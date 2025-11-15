@@ -19,12 +19,15 @@
     <div class="bg-white shadow-lg rounded-xl p-6 border-l-8 border-blue-700">
       <h2 class="text-xl font-bold text-gray-800 mb-4">Menu généré par AI</h2>
       <div id="menu-result" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <p id="menu-output" class="col-span-full text-gray-600">Cliquez sur "Générer Menu AI" pour créer un menu à partir des propositions.</p>
+        <p id="menu-output" class="col-span-full text-gray-600">
+          Cliquez sur "Générer Menu AI" pour créer un menu à partir des propositions.
+        </p>
       </div>
 
       <div class="mt-6 flex gap-3">
-        <button id="generateMenuBtn" class="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600">
-          Générer Menu AI
+        <button id="generateMenuBtn" class="bg-green-700 text-white px-4 py-2 rounded hover:bg-green-600 flex items-center gap-2">
+          <span>Générer Menu AI</span>
+          <span id="loadingEmoji" class="hidden animate-pulse">🤖💡🍴</span>
         </button>
         <button id="approveMenuBtn" class="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-600">
           Approuver Menu
@@ -35,54 +38,136 @@
 
   <footer class="mt-20 text-center text-gray-500 text-sm py-6">
     &copy; 2025 MountaRestorant
-  </footer>
-<script>
+  </footer><script>
 const generateBtn = document.getElementById("generateMenuBtn");
 const approveBtn = document.getElementById("approveMenuBtn");
 const menuResult = document.getElementById("menu-result");
+const loadingEmoji = document.getElementById("loadingEmoji");
 
-let currentMenuItems = []; // store generated items
+let currentMenuItems = {}; // structured menu object
+let approvedMenu = null;
 
-async function fetchPropositions() {
-  const res = await fetch("/admin/propositions");
-  const propositions = await res.json();
-  return propositions.map(p => p.proposition).join(". ");
+// Parse AI menu (expects lines with <b>...</b>)
+function parseAIMenu(rawText) {
+  const lines = rawText.split("\n").filter(l => l.trim().length);
+  const keys = ["entree", "plat", "dessert"];
+  const menu = {};
+  lines.forEach((line, i) => {
+    const match = line.match(/<b>(.*?)<\/b>/);
+    if (match) menu[keys[i]] = match[1];
+  });
+  return menu;
 }
 
+// Render menu HTML
+function renderMenuHTML(menu, editable = false) {
+  if (!menu) return "";
+  if (!editable) {
+    return `
+      <div class="bg-white p-4 rounded shadow space-y-2">
+        <p><b>Entrée:</b> ${menu.entree}</p>
+        <p><b>Plat:</b> ${menu.plat}</p>
+        <p><b>Dessert:</b> ${menu.dessert}</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="bg-white p-4 rounded shadow space-y-2">
+      <p><b>Entrée:</b> <input type="text" class="border px-2 py-1 rounded w-full" value="${menu.entree}" data-key="entree"></p>
+      <p><b>Plat:</b> <input type="text" class="border px-2 py-1 rounded w-full" value="${menu.plat}" data-key="plat"></p>
+      <p><b>Dessert:</b> <input type="text" class="border px-2 py-1 rounded w-full" value="${menu.dessert}" data-key="dessert"></p>
+      <button id="saveModifiedMenuBtn" class="bg-green-700 text-white px-4 py-2 rounded mt-2 hover:bg-green-600">Enregistrer Modifications</button>
+    </div>
+  `;
+}
+
+// Generate menu from AI
 async function generateMenu() {
   try {
+    loadingEmoji.classList.remove("hidden");
+    generateBtn.disabled = true;
+    menuResult.innerHTML = `<p class="col-span-full text-gray-600">L'IA génère le menu... 🤖💡🍴</p>`;
+
     const res = await fetch("/admin/generate-menu", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: "Generate a restaurant menu for today using approved propositions. Include images."
-      })
+      body: JSON.stringify({ propositions: [] })
     });
+
     const data = await res.json();
-    alert('AI menu generated: ' + JSON.stringify(data));
-  } catch(err) {
+    console.log("Menu AI brut:", data.menu.menu);
+
+    currentMenuItems = parseAIMenu(data.menu.menu);
+    approvedMenu = null;
+    menuResult.innerHTML = renderMenuHTML(currentMenuItems, false);
+
+  } catch (err) {
     console.error(err);
-    alert('Failed to generate menu.');
+    menuResult.innerHTML = `<p class="col-span-full text-red-500">Échec de la génération du menu. ❌</p>`;
+  } finally {
+    loadingEmoji.classList.add("hidden");
+    generateBtn.disabled = false;
   }
-
-
 }
-// Generate menu on button click
-generateBtn.addEventListener("click", generateMenu);   
 
-// Approve menu and save to JSON
+// Approve menu
 approveBtn.addEventListener("click", async () => {
-  if (!currentMenuItems.length) return alert("Générez d'abord le menu !");
-  const res = await fetch("/admin/approve-menu", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ menu: currentMenuItems })
-  });
-  const result = await res.json();
-  alert(result.message);
+  if (!currentMenuItems.entree) return alert("Générez d'abord le menu !");
+  try {
+    console.log("Approbation du menu:", currentMenuItems);
+    const menuArray = Object.values(currentMenuItems).filter(Boolean);
+    console.log("Envoi au serveur...");
+    const res = await fetch("/admin/approve-menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ menu: menuArray })
+    });
+    const result = await res.json();
+    approvedMenu = { ...currentMenuItems };
+    alert(result.message || "Menu approuvé !");
+    menuResult.innerHTML = renderMenuHTML(approvedMenu, false);
+  } catch (err) {
+    console.error(err);
+    alert("Échec de l'approbation du menu.");
+  }
 });
-</script>
 
+// Add modify button dynamically
+const modifyBtn = document.createElement("button");
+modifyBtn.textContent = "Modifier Menu";
+modifyBtn.className = "bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-400 mt-3";
+modifyBtn.addEventListener("click", () => {
+  if (!approvedMenu) return alert("Aucun menu approuvé à modifier !");
+  menuResult.innerHTML = renderMenuHTML(approvedMenu, true);
+
+  document.getElementById("saveModifiedMenuBtn").addEventListener("click", async () => {
+    const inputs = menuResult.querySelectorAll("input[data-key]");
+    inputs.forEach(input => {
+      approvedMenu[input.dataset.key] = input.value;
+    });
+    const menuArray = Object.values(approvedMenu).filter(Boolean);
+
+    // Save modified menu
+    try {
+      const res = await fetch("/admin/approve-menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ menu: menuArray })
+      });
+      const result = await res.json();
+      alert(result.message || "Menu modifié et enregistré !");
+      menuResult.innerHTML = renderMenuHTML(approvedMenu, false);
+    } catch (err) {
+      console.error(err);
+      alert("Échec de la sauvegarde du menu modifié.");
+    }
+  });
+});
+
+approveBtn.parentNode.appendChild(modifyBtn);
+generateBtn.addEventListener("click", generateMenu);
+</script>
 
 </body>
 </html>
