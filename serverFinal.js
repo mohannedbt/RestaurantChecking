@@ -166,7 +166,7 @@ app.get("/admin/menu", (req, res) => {
 app.use(bodyParser.json());
 
 
-const LOCAL_AI_URL = "http://127.0.0.1:8000/chat";
+const LOCAL_AI_URL = "https://ai-api-1-quga.onrender.com/chat";
 
 // Default Tunisian menu categories in French
 
