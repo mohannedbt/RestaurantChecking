@@ -12,8 +12,8 @@ port: 465,
 secure: true,
  // true for 465
   auth: {
-    user: "mohannedbentaleb8@gmail.com",
-    pass: "lvfgecyfizyljmfy"
+     user: "habbachiafef18@gmail.com",
+    pass: "mtcv caqm ecpo uqoa"
   }
 });
 async function generatePaymentQRCode(payment) {
@@ -188,7 +188,7 @@ app.post("/admin/confirm-payment", async (req, res) => {
   saveOps(operations);
 
   // Send email to the fixed address
-  const studentEmail = "btmohanned671@gmail.com";
+  const studentEmail = "afefhabachi00@gmail.com";;
   await sendPaymentEmail(studentEmail, op);
 
   res.json({ message: `Payment for ${op.carteEtudiant} confirmed & email sent`, operation: op });
@@ -495,7 +495,7 @@ app.post("/generate-qr", (req, res) => {
   const newOperation = {
     id: token,
     carteEtudiant,
-    email: "btmohanned671@gmail.com",
+    email: "afefhabachi00@gmail.com",
     montant: 0.2,
     date: datelogin,
     paid: false,
