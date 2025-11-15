@@ -3,6 +3,7 @@ const path = require("path");
 const QRCode = require("qrcode");
 const nodemailer = require("nodemailer");
 
+require('dotenv').config();
 // ⚠ Make sure you use an app password for Gmail, not your main password
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -155,22 +156,64 @@ app.get("/admin/menu", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "admin", "admin_menu.html"));
 });
 // server.js (Node/Express)
+
+app.use(bodyParser.json());
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+const { HfInference } = require("@huggingface/inference");
+
+const hf = new HfInference(); // you can leave token empty for free inference, but rate-limited
+
 app.post("/admin/generate-menu", async (req, res) => {
+  const prompt = req.body.text || "Generate a restaurant menu for today with 3 starters, 3 mains, 2 desserts";
+
+  // First try OpenAI
   try {
-    const response = await fetch("https://ai-api-1-quga.onrender.com/chat", {
+    const openAIResp = await fetch("https://api.openai.com/v1/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: req.body.text })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "text-davinci-003", // or "gpt-3.5-turbo" if available
+        prompt: prompt,
+        max_tokens: 200,
+        temperature: 0.7
+      })
     });
-    console.log("Response status from AI API:", response.status);
-    console.log(response);
-    const data = await response.json();
-    res.json(data); // send back to frontend
+
+    const openAIData = await openAIResp.json();
+
+    if(openAIData.error && openAIData.error.code === "insufficient_quota") {
+      throw new Error("OpenAI quota exceeded");
+    }
+
+    return res.json({ menuText: openAIData.choices[0].text.trim() });
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to generate menu" });
+    console.log("OpenAI failed, falling back to Hugging Face:", err.message);
+
+    try {
+      const hfResp = await hf.textGeneration({
+        model: "tiiuae/falcon-7b-instruct", // small, free HF model
+        inputs: prompt,
+        parameters: { max_new_tokens: 150 }
+      });
+
+      const hfText = hfResp.generated_text || hfResp[0].generated_text;
+      return res.json({ menuText: hfText.trim() });
+
+    } catch(hfErr) {
+      console.error("Hugging Face fallback also failed:", hfErr);
+      return res.status(500).json({ error: "Failed to generate menu with both AI providers" });
+    }
   }
 });
+
+
+// Route to approve and save menu
 
 app.post("/admin/approve-menu", (req, res) => {
   const { menu } = req.body;
