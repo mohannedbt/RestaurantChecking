@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajout Repas Excédentaires - Restaurant2025</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body {
+  font-family: 'Helvetica', sans-serif;
+  background: linear-gradient(135deg, #ffd3b6, #dcedc1);
+  color: #fff;
+}
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+}
+.card {
+  background: rgba(0,0,0,0.3);
+  padding: 1rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+input, button {
+  font-size: 1rem;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="text-3xl font-bold mb-6 text-center">Ajouter Repas Excédentaires</h1>
+
+  <div id="menu-container" class="space-y-4">
+    <!-- Les plats du menu seront chargés ici -->
+  </div>
+
+</div>
+
+<script>
+// Charger le menu du jour
+async function loadMenu() {
+  const container = document.getElementById("menu-container");
+  container.innerHTML = "<p>Chargement du menu...</p>";
+
+  try {
+    const res = await fetch("/api/menu/today");
+    const data = await res.json();
+    container.innerHTML = "";
+
+    if (!data.menu || !data.menu.length) {
+      container.innerHTML = "<p>Aucun menu disponible aujourd'hui.</p>";
+      return;
+    }
+
+    data.menu.forEach(plat => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <h3 class="text-xl font-semibold">${plat}</h3>
+        <form class="flex gap-2 mt-2" onsubmit="addExcedent(event, '${plat}')">
+          <input type="number" min="1" placeholder="Quantité excédentaire" class="p-2 rounded text-black flex-1" required>
+          <button type="submit" class="bg-white text-green-700 px-3 py-1 rounded hover:bg-gray-200">Ajouter</button>
+        </form>
+      `;
+      container.appendChild(div);
+    });
+  } catch(err) {
+    console.error(err);
+    container.innerHTML = "<p>Erreur lors du chargement du menu.</p>";
+  }
+}
+
+// Ajouter la quantité excédentaire
+async function addExcedent(event, plat) {
+  event.preventDefault();
+  const input = event.target.querySelector("input");
+  const quantite = parseInt(input.value);
+  if (!quantite || quantite <= 0) return;
+
+  try {
+    const res = await fetch("/admin/repas-excedentaires", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nomPlat: plat, quantite })
+    });
+    const result = await res.json();
+    alert(result.message);
+    input.value = "";
+  } catch(err) {
+    console.error(err);
+    alert("Erreur lors de l'ajout du repas excédentaire.");
+  }
+}
+
+loadMenu();
+</script>
+</body>
+</html>

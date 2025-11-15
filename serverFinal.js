@@ -4,6 +4,7 @@ const QRCode = require("qrcode");
 const nodemailer = require("nodemailer");
 
 require('dotenv').config();
+
 // ⚠ Make sure you use an app password for Gmail, not your main password
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -37,6 +38,60 @@ const { v4: uuidv4 } = require("uuid");
 const bodyParser = require("body-parser");
 app.use(bodyParser.json());
 
+// --- Helpers pour JSON ---
+function loadJSON(filename) {
+  const filePath = path.join(__dirname, filename);
+  if (!fs.existsSync(filePath)) return [];
+  const data = fs.readFileSync(filePath, "utf8").trim();
+  return data ? JSON.parse(data) : [];
+}
+
+function saveJSON(filename, data) {
+  const filePath = path.join(__dirname, filename);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+}
+
+// --- Routes ---
+// 1️⃣ Voir les associations partenaires
+app.get("/associations/partners", (req, res) => {
+  const associations = loadJSON("partners.json");
+  res.json(associations);
+});
+
+// 2️⃣ Proposer un événement
+app.post("/associations/propose-event", (req, res) => {
+  const { nomAssociation, titreEvent, description, date } = req.body;
+  if (!nomAssociation || !titreEvent || !date) {
+    return res.status(400).json({ message: "Données manquantes" });
+  }
+
+  const events = loadJSON("events.json");
+  const newEvent = {
+    id: Date.now().toString(),
+    nomAssociation,
+    titreEvent,
+    description: description || "",
+    date,
+    participants: []
+  };
+
+  events.push(newEvent);
+  saveJSON("events.json", events);
+
+  res.json({ message: "Événement proposé avec succès !", event: newEvent });
+});
+
+// 3️⃣ Suivi de l'engagement étudiant
+app.get("/associations/engagement", (req, res) => {
+  const events = loadJSON("events.json");
+  res.json(events.map(ev => ({
+    id: ev.id,
+    titreEvent: ev.titreEvent,
+    date: ev.date,
+    participants: ev.participants.length
+  })));
+});
+
 // Load all menus
 function loadMenus() {
   const file = path.join(__dirname, "menu.json");
@@ -48,6 +103,16 @@ function loadMenus() {
 function saveMenus(data) {
   const file = path.join(__dirname, "menu.json");
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+const REPAS_FILE = path.join(__dirname, "repas_excedentaires.json");
+
+function loadRepasExcedentaires() {
+  if (!fs.existsSync(REPAS_FILE)) return [];
+  return JSON.parse(fs.readFileSync(REPAS_FILE, "utf8"));
+}
+
+function saveRepasExcedentaires(data) {
+  fs.writeFileSync(REPAS_FILE, JSON.stringify(data, null, 2));
 }
 app.get("/api/menu/today", (req, res) => {
   const menus = loadMenus();
@@ -165,6 +230,66 @@ app.get("/admin/menu", (req, res) => {
 
 app.use(bodyParser.json());
 
+app.post("/admin/repas-excedentaires", (req, res) => {
+  const { nomPlat, quantite } = req.body; 
+  if (!nomPlat || quantite == null) return res.status(400).json({ message: "Données manquantes" });
+
+  const menus = loadMenus();
+  const today = new Date().toISOString().slice(0, 10);
+  const todayMenu = menus.find(m => m.date === today);
+  if (!todayMenu) return res.status(404).json({ message: "Pas de menu pour aujourd'hui." });
+
+  const repasExcedentaires = loadRepasExcedentaires();
+  let repasDuJour = repasExcedentaires.find(r => r.date === today);
+
+  if (!repasDuJour) {
+    repasDuJour = { date: today, items: [] };
+    repasExcedentaires.push(repasDuJour);
+  }
+
+  // Vérifier si le plat existe déjà
+  let plat = repasDuJour.items.find(p => p.nom === nomPlat);
+  if (plat) {
+    plat.quantite += quantite;
+  } else {
+    plat = { nom: nomPlat, quantite };
+    repasDuJour.items.push(plat);
+  }
+
+  saveRepasExcedentaires(repasExcedentaires);
+
+  res.json({ message: `Repas excédentaire ajouté pour ${nomPlat}`, plat });
+});
+
+
+// ----------- ROUTES ASSOCIATION -----------
+
+// Lister tous les repas excédentaires disponibles
+app.get("/association/repas-excedentaires", (req, res) => {
+  const repasExcedentaires = loadRepasExcedentaires();
+  res.json(repasExcedentaires);
+});
+
+// Collecter des repas excédentaires (réduire la quantité)
+app.post("/association/collecter", (req, res) => {
+  const { date, nomPlat, quantite } = req.body;
+  if (!date || !nomPlat || quantite == null) return res.status(400).json({ message: "Données manquantes" });
+
+  const repasExcedentaires = loadRepasExcedentaires();
+  const jour = repasExcedentaires.find(r => r.date === date);
+  if (!jour) return res.status(404).json({ message: "Pas de repas excédentaires pour ce jour" });
+
+  const plat = jour.items.find(i => i.nom === nomPlat);
+  if (!plat) return res.status(404).json({ message: "Plat introuvable" });
+
+  if (plat.quantite < quantite) return res.status(400).json({ message: "Quantité insuffisante" });
+
+  plat.quantite -= quantite;
+
+  saveRepasExcedentaires(repasExcedentaires);
+
+  res.json({ message: "Repas collecté avec succès", plat });
+});
 
 const LOCAL_AI_URL = "https://ai-api-1-quga.onrender.com/chat";
 
@@ -386,7 +511,244 @@ app.post("/generate-qr", (req, res) => {
     operation: newOperation
   });
 });
+const stagesFile = path.join(__dirname, "stages.json");
 
+// Charger les stages
+function loadStages() {
+  if (!fs.existsSync(stagesFile)) return [];
+  const data = fs.readFileSync(stagesFile, "utf8").trim();
+  if (!data) return [];
+  return JSON.parse(data);
+}
+
+// Sauvegarder les stages
+function saveStages(data) {
+  fs.writeFileSync(stagesFile, JSON.stringify(data, null, 2));
+}
+
+// Récupérer toutes les offres de stage (GET)
+app.get("/association/stages", (req, res) => {
+  const stages = loadStages();
+  res.json(stages);
+});
+
+// Ajouter une nouvelle offre de stage (POST)
+app.post("/association/stages", (req, res) => {
+  const { titre, description } = req.body;
+  if (!titre || !description) return res.status(400).json({ message: "Données manquantes" });
+
+  const stages = loadStages();
+  const newStage = {
+    id: Date.now().toString(),
+    titre,
+    description
+  };
+  stages.push(newStage);
+  saveStages(stages);
+
+  res.json({ message: "Stage ajouté avec succès", stage: newStage });
+});
+
+const recyclageFile = path.join(__dirname, "recyclage.json");
+
+// Charger les actions écologiques
+function loadRecyclage() {
+  if (!fs.existsSync(recyclageFile)) return [];
+  const data = fs.readFileSync(recyclageFile, "utf8").trim();
+  if (!data) return [];
+  return JSON.parse(data);
+}
+
+// Sauvegarder les actions
+function saveRecyclage(data) {
+  fs.writeFileSync(recyclageFile, JSON.stringify(data, null, 2));
+}
+
+// Récupérer toutes les actions (GET)
+app.get("/association/recyclage", (req, res) => {
+  const actions = loadRecyclage();
+  res.json(actions);
+});
+
+// Ajouter une nouvelle action (POST)
+app.post("/association/recyclage", (req, res) => {
+  const { titre, description } = req.body;
+  if (!titre || !description) return res.status(400).json({ message: "Données manquantes" });
+
+  const actions = loadRecyclage();
+  const newAction = {
+    id: Date.now().toString(),
+    titre,
+    description
+  };
+  actions.push(newAction);
+  saveRecyclage(actions);
+
+  res.json({ message: "Action ajoutée avec succès", action: newAction });
+});
+const repasExcedentairesFile = path.join(__dirname, "repasExcedentaires.json");
+
+function loadRepasExcedentaires() {
+  if (!fs.existsSync(repasExcedentairesFile)) return [];
+  const data = fs.readFileSync(repasExcedentairesFile, "utf8").trim();
+  if (!data) return [];
+  return JSON.parse(data);
+}
+
+function saveRepasExcedentaires(data) {
+  fs.writeFileSync(repasExcedentairesFile, JSON.stringify(data, null, 2));
+}
+
+// Ajouter un repas excédentaire (Admin)
+app.post("/admin/repas-excedentaires", (req, res) => {
+  const { nomPlat, quantite } = req.body;
+  if (!nomPlat || !quantite) return res.status(400).json({ message: "Données manquantes" });
+
+  const repasExcedentaires = loadRepasExcedentaires();
+  const today = new Date().toISOString().slice(0, 10);
+  let jour = repasExcedentaires.find(r => r.date === today);
+
+  if (!jour) {
+    jour = { date: today, items: [] };
+    repasExcedentaires.push(jour);
+  }
+
+  const plat = jour.items.find(p => p.nom === nomPlat);
+  if (plat) {
+    plat.quantite += quantite;
+  } else {
+    jour.items.push({ nom: nomPlat, quantite });
+  }
+
+  saveRepasExcedentaires(repasExcedentaires);
+
+  res.json({ message: `Repas excédentaire ajouté pour ${nomPlat}`, plat: { nom: nomPlat, quantite } });
+});
+const ateliersFile = path.join(__dirname, "ateliers.json");
+
+function loadAteliers() {
+  if (!fs.existsSync(ateliersFile)) return [];
+  const data = fs.readFileSync(ateliersFile, "utf8").trim();
+  if (!data) return [];
+  return JSON.parse(data);
+}
+
+function saveAteliers(data) {
+  fs.writeFileSync(ateliersFile, JSON.stringify(data, null, 2));
+}
+
+// GET : récupérer tous les ateliers
+app.get("/association/ateliers", (req, res) => {
+  const ateliers = loadAteliers();
+  res.json(ateliers);
+});
+
+// POST : créer un atelier
+app.post("/association/ateliers", (req, res) => {
+  const { titre, description, date } = req.body;
+  if (!titre || !description || !date) return res.status(400).json({ message: "Données manquantes" });
+
+  const ateliers = loadAteliers();
+  const newAtelier = {
+    id: Date.now().toString(),
+    titre,
+    description,
+    date
+  };
+  ateliers.push(newAtelier);
+  saveAteliers(ateliers);
+  res.json({ message: "Atelier créé avec succès !" });
+});
+
+// DELETE : supprimer un atelier
+app.delete("/association/ateliers/:id", (req, res) => {
+  const { id } = req.params;
+  let ateliers = loadAteliers();
+  ateliers = ateliers.filter(a => a.id !== id);
+  saveAteliers(ateliers);
+  res.json({ message: "Atelier supprimé avec succès !" });
+});
+const PARTNERS_FILE = path.join(__dirname, "partners.json");
+const EVENTS_FILE = path.join(__dirname, "events.json");
+
+// Charger les partenaires
+function loadPartners() {
+  if (!fs.existsSync(PARTNERS_FILE)) return [];
+  const data = fs.readFileSync(PARTNERS_FILE, "utf8").trim();
+  return data ? JSON.parse(data) : [];
+}
+
+// Charger les événements
+function loadEvents() {
+  if (!fs.existsSync(EVENTS_FILE)) return [];
+  const data = fs.readFileSync(EVENTS_FILE, "utf8").trim();
+  return data ? JSON.parse(data) : [];
+}
+
+// Sauvegarder les événements
+function saveEvents(events) {
+  fs.writeFileSync(EVENTS_FILE, JSON.stringify(events, null, 2));
+}
+
+// ----------- Routes -----------
+
+// Retourne la liste des associations partenaires
+app.get("/associations/partners", (req, res) => {
+  const partners = loadPartners();
+  res.json(partners);
+});
+
+// Retourne le suivi de l'engagement étudiant
+app.get("/associations/engagement", (req, res) => {
+  const events = loadEvents();
+  res.json(events);
+});
+
+// Proposer un événement
+app.post("/associations/propose-event", (req, res) => {
+  const { nomAssociation, titreEvent, description, date } = req.body;
+  if (!nomAssociation || !titreEvent || !date) {
+    return res.status(400).json({ message: "Données manquantes" });
+  }
+
+  const events = loadEvents();
+  const newEvent = {
+    id: Date.now().toString(),
+    nomAssociation,
+    titreEvent,
+    description,
+    date,
+    participants: 0 // par défaut
+  };
+
+  events.push(newEvent);
+  saveEvents(events);
+
+  res.json({ message: "Événement proposé avec succès !" });
+});
+
+
+app.get("/admin/repas-excedentaires", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin", "admin-repas-excedentaires.html"));}
+);
+app.get("/associations/retraits", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "association", "retrait_repas.html"));}
+); 
+app.get("/associations", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "association", "index.html"));}
+);
+app.get("/associations/stages", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "association", "stages.html"));}
+);
+app.get("/associations/recyclage", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "association", "recyclage.html"));}
+);
+app.get("/associations/collaborations", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "association", "collaborations.html"));}
+);
+app.get("/associations/ateliers", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "association", "ateliers.html"));}
+);
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

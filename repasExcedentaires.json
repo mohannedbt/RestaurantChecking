@@ -1,0 +1,23 @@
+[
+  {
+    "date": "2025-11-15",
+    "items": [
+      {
+        "nom": "Salade Mechwiya",
+        "quantite": 2
+      },
+      {
+        "nom": "Macaroni",
+        "quantite": 8
+      },
+      {
+        "nom": "Fruits",
+        "quantite": 7
+      },
+      {
+        "nom": "riz",
+        "quantite": 9
+      }
+    ]
+  }
+]

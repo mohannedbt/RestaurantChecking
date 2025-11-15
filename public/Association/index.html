@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Association - Restaurant2025</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body {
+  font-family: 'Helvetica', sans-serif;
+  background: linear-gradient(135deg, #a8e6cf, #56ab2f, #dcedc1);
+  min-height: 100vh;
+  color: #fff;
+}
+.overlay {
+  background: rgba(0,0,0,0.25);
+  min-height: 100vh;
+  padding: 2rem;
+}
+.card {
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+}
+.card h2 {
+  text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+</style>
+</head>
+<body>
+<div class="overlay">
+  <header class="flex justify-between items-center mb-12">
+    <h1 class="text-4xl font-bold text-white">Dashboard Association - Restaurant2025</h1>
+    <a href="/logout" class="bg-white text-green-700 px-4 py-2 rounded hover:bg-gray-200">Déconnexion</a>
+  </header>
+
+  <main class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    
+    <!-- Card 1: Collaborations -->
+    <div class="card bg-gradient-to-tr from-green-400 to-green-600">
+      <h2 class="text-2xl font-bold mb-3">Collaborations</h2>
+      <p>Collaborer avec des associations sociales, culturelles ou de solidarité.</p>
+      <a href="/associations/collaborations" class="mt-4 inline-block bg-white text-green-700 px-4 py-2 rounded hover:bg-gray-200">Gérer</a>
+    </div>
+
+    <!-- Card 2: Retrait des repas excédentaires -->
+    <div class="card bg-gradient-to-tr from-green-300 to-green-500">
+      <h2 class="text-2xl font-bold mb-3">Retrait des repas excédentaires</h2>
+      <p>Gérer le retrait des repas excédentaires pour éviter le gaspillage.</p>
+      <a href="/associations/retraits" class="mt-4 inline-block bg-white text-green-700 px-4 py-2 rounded hover:bg-gray-200">Gérer</a>
+    </div>
+
+    <!-- Card 3: Recyclage et sensibilisation -->
+    <div class="card bg-gradient-to-tr from-green-500 to-green-700">
+      <h2 class="text-2xl font-bold mb-3">Recyclage & Sensibilisation</h2>
+      <p>Organiser des campagnes de recyclage et sensibiliser les étudiants au tri et à la réduction des déchets.</p>
+      <a href="/associations/recyclage" class="mt-4 inline-block bg-white text-green-700 px-4 py-2 rounded hover:bg-gray-200">Gérer</a>
+    </div>
+
+    <!-- Card 4: Ateliers écologiques -->
+    <div class="card bg-gradient-to-tr from-green-200 to-green-400">
+      <h2 class="text-2xl font-bold mb-3">Ateliers écologiques</h2>
+      <p>Créer et organiser des ateliers ou événements écologiques au sein du campus.</p>
+      <a href="/associations/ateliers" class="mt-4 inline-block bg-white text-green-700 px-4 py-2 rounded hover:bg-gray-200">Gérer</a>
+    </div>
+    <div class="card bg-gradient-to-tr from-green-200 to-green-400">
+  <h2 class="text-2xl font-bold mb-3">Stages Étudiants Cuisiniers</h2>
+  <p>Créer et organiser des stages pour les étudiants cuisiniers au sein du restaurant universitaire.</p>
+  <a href="/associations/stages" class="mt-4 inline-block bg-white text-green-700 px-4 py-2 rounded hover:bg-gray-200">Gérer</a>
+</div>
+
+
+  </main>
+</div>
+</body>
+</html>

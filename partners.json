@@ -1,0 +1,23 @@
+[
+  {
+    "id": "1",
+    "nom": "Association Étudiants Écologie",
+    "description": "Organisation d'ateliers et événements écologiques sur le campus.",
+    "contact": "contact@ecologie-campus.fr",
+    "site": "https://www.ecologie-campus.fr"
+  },
+  {
+    "id": "2",
+    "nom": "Club de Robotique",
+    "description": "Développement de projets robotiques et participation à des compétitions.",
+    "contact": "robotique@campus.fr",
+    "site": "https://www.club-robotique.fr"
+  },
+  {
+    "id": "3",
+    "nom": "Association Culturelle",
+    "description": "Promotion des activités culturelles et artistiques sur le campus.",
+    "contact": "culture@campus.fr",
+    "site": "https://www.culture-campus.fr"
+  }
+]

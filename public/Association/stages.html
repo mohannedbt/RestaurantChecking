@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stages Étudiants - Association - Restaurant2025</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body { font-family: 'Helvetica', sans-serif; background: linear-gradient(135deg, #ffd3b6, #dcedc1); color: #fff; }
+.overlay { background: rgba(0,0,0,0.3); min-height: 100vh; padding: 2rem; }
+.card { background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 1rem; margin-bottom: 1rem; backdrop-filter: blur(5px); }
+input, button { font-size: 1rem; }
+</style>
+</head>
+<body>
+<div class="overlay">
+<header class="mb-8 flex justify-between items-center">
+  <h1 class="text-3xl font-bold">Stages Étudiants Cuisiniers</h1>
+  <a href="association-dashboard.html" class="bg-white text-green-700 px-3 py-1 rounded hover:bg-gray-200">Retour</a>
+</header>
+
+<section>
+  <h2 class="text-2xl font-bold mb-4">Offres de stage disponibles</h2>
+  <div id="stages-container" class="space-y-4">
+    <!-- Les stages seront chargés ici -->
+  </div>
+
+  <h2 class="text-2xl font-bold mt-6 mb-2">Ajouter une nouvelle offre de stage</h2>
+  <form id="add-stage-form" class="flex gap-2 flex-col md:flex-row">
+    <input type="text" id="titre-stage" placeholder="Titre du stage" class="p-2 rounded text-black flex-1" required>
+    <input type="text" id="desc-stage" placeholder="Description" class="p-2 rounded text-black flex-1" required>
+    <button type="submit" class="bg-white text-green-700 px-3 py-1 rounded hover:bg-gray-200">Ajouter</button>
+  </form>
+</section>
+</div>
+
+<script>
+async function loadStages() {
+  const container = document.getElementById("stages-container");
+  container.innerHTML = "Chargement...";
+
+  try {
+    const res = await fetch("/association/stages");
+    const stages = await res.json();
+    container.innerHTML = "";
+
+    if (!stages.length) {
+      container.innerHTML = "<p>Aucune offre de stage pour le moment.</p>";
+      return;
+    }
+
+    stages.forEach(stage => {
+      const div = document.createElement("div");
+      div.className = "card";
+      div.innerHTML = `
+        <h3 class="text-xl font-semibold">${stage.titre}</h3>
+        <p>${stage.description}</p>
+      `;
+      container.appendChild(div);
+    });
+  } catch(err) {
+    console.error(err);
+    container.innerHTML = "<p>Erreur lors du chargement des stages.</p>";
+  }
+}
+
+// Ajouter une nouvelle offre
+document.getElementById("add-stage-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const titre = document.getElementById("titre-stage").value.trim();
+  const description = document.getElementById("desc-stage").value.trim();
+  if (!titre || !description) return;
+
+  try {
+    await fetch("/association/stages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ titre, description })
+    });
+
+    document.getElementById("titre-stage").value = "";
+    document.getElementById("desc-stage").value = "";
+    loadStages();
+  } catch(err) {
+    console.error(err);
+    alert("Erreur lors de l'ajout du stage.");
+  }
+});
+
+// Initial load
+loadStages();
+</script>
+</body>
+</html>

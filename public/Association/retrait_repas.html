@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Repas Excédentaires - Association</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+body {
+  background: linear-gradient(135deg, #a8e063, #56ab2f);
+  font-family: 'Helvetica', sans-serif;
+  color: #fff;
+}
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 2rem;
+}
+.card {
+  background: rgba(255,255,255,0.1);
+  padding: 1rem;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  transition: transform 0.2s;
+}
+.card:hover { transform: scale(1.02); }
+input, button { font-size: 1rem; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1 class="text-3xl font-bold mb-6 text-center">Repas Excédentaires - Association</h1>
+
+  <!-- Liste des repas excédentaires -->
+  <div id="repas-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+</div>
+
+<script>
+// Charger les repas excédentaires
+async function loadRepas() {
+  const container = document.getElementById("repas-container");
+  container.innerHTML = "<p>Chargement...</p>";
+
+  try {
+    const res = await fetch("/association/repas-excedentaires");
+    const data = await res.json();
+    container.innerHTML = "";
+
+    if (!data.length) {
+      container.innerHTML = "<p class='col-span-full text-center'>Aucun repas excédentaire disponible.</p>";
+      return;
+    }
+
+    // Chaque jour peut avoir plusieurs plats
+    data.forEach(day => {
+      if (!day.items || !day.items.length) return;
+
+      day.items.forEach(plat => {
+        // Safe IDs for HTML (replace spaces)
+        const safeId = plat.nom.replace(/\s+/g, "_");
+        const quantiteId = `quantite-${day.date}-${safeId}`;
+
+        const div = document.createElement("div");
+        div.className = "card";
+
+        div.innerHTML = `
+          <h3 class="text-xl font-semibold mb-2">${plat.nom}</h3>
+          <p class="mb-2">Quantité disponible: <span id="${quantiteId}">${plat.quantite}</span></p>
+          <form class="flex gap-2">
+            <input type="number" name="quantite" placeholder="Quantité à collecter..." class="p-2 rounded text-black flex-1" required min="1" max="${plat.quantite}">
+            <button type="submit" class="bg-white text-green-700 px-3 py-1 rounded hover:bg-gray-200">Collecter</button>
+          </form>
+        `;
+
+        const form = div.querySelector("form");
+        form.addEventListener("submit", async e => {
+          e.preventDefault();
+          const input = e.target.quantite;
+          const quantite = parseInt(input.value);
+          if (!quantite || quantite <= 0) return alert("Quantité invalide");
+
+          try {
+            const res = await fetch("/association/collecter", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ date: day.date, nomPlat: plat.nom, quantite })
+            });
+            const result = await res.json();
+            if (result.error) return alert(result.error);
+
+            // Mettre à jour la quantité affichée
+            document.getElementById(quantiteId).textContent = result.plat.quantite;
+            input.value = "";
+            input.max = result.plat.quantite;
+            alert(`Vous avez collecté ${quantite} repas de ${plat.nom}`);
+          } catch(err) {
+            console.error(err);
+            alert("Erreur lors de la collecte du repas.");
+          }
+        });
+
+        container.appendChild(div);
+      });
+    });
+
+  } catch(err) {
+    container.innerHTML = "<p class='text-center'>Erreur lors du chargement des repas.</p>";
+    console.error(err);
+  }
+}
+
+// Initial load
+loadRepas();
+</script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collaboration - Association - Restaurant2025</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    font-family: 'Helvetica', sans-serif;
+    background: linear-gradient(135deg, #a8e6cf, #dcedc1, #e0f7fa);
+    min-height: 100vh;
+    color: #1a202c;
+  }
+
+  .overlay {
+    background: rgba(255,255,255,0.2);
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.3);
+  }
+
+  h1, h2 {
+    color: #1b5e20; /* vert foncé lisible */
+  }
+
+  input, textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border-radius: 0.5rem;
+    border: 1px solid #c1e1c1;
+    margin-bottom: 0.5rem;
+  }
+
+  button {
+    background-color: #38a169;
+    color: white;
+    padding: 0.6rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  button:hover {
+    background-color: #2f855a;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+  }
+
+  th, td {
+    border: 1px solid #c1e1c1;
+    padding: 0.5rem;
+    text-align: left;
+  }
+
+  th {
+    background-color: #66bb6a;
+    color: white;
+  }
+
+  td {
+    background-color: rgba(255,255,255,0.6);
+  }
+</style>
+</head>
+<body>
+<div class="overlay">
+<header class="mb-8 flex justify-between items-center">
+  <h1 class="text-3xl font-bold">Collaboration Sociale et Culturelle</h1>
+  <a href="/associations" class="bg-white text-green-700 px-3 py-1 rounded hover:bg-gray-200">Retour</a>
+</header>
+
+<!-- Liste des associations partenaires -->
+<div class="card">
+  <h2>Associations partenaires</h2>
+  <ul id="partners-list" class="list-disc pl-6"></ul>
+</div>
+
+<!-- Formulaire pour proposer un événement -->
+<div class="card">
+  <h2>Proposer un événement</h2>
+  <form id="event-form">
+    <input type="text" id="nomAssociation" placeholder="Nom de votre association" required>
+    <input type="text" id="titreEvent" placeholder="Titre de l'événement" required>
+    <textarea id="descriptionEvent" placeholder="Description (optionnelle)"></textarea>
+    <input type="date" id="dateEvent" required>
+    <button type="submit">Proposer</button>
+  </form>
+  <p id="event-message" class="mt-2 font-semibold"></p>
+</div>
+
+<!-- Suivi de l'engagement -->
+<div class="card">
+  <h2>Suivi de l'engagement étudiant</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Événement</th>
+        <th>Date</th>
+        <th>Participants</th>
+      </tr>
+    </thead>
+    <tbody id="engagement-list"></tbody>
+  </table>
+</div>
+
+<script>
+async function loadPartners() {
+  const res = await fetch("/associations/partners");
+  const data = await res.json();
+  const ul = document.getElementById("partners-list");
+  ul.innerHTML = "";
+  data.forEach(assoc => {
+    const li = document.createElement("li");
+    li.textContent = assoc.nom;
+    ul.appendChild(li);
+  });
+}
+
+async function loadEngagement() {
+  const res = await fetch("/associations/engagement");
+  const data = await res.json();
+  const tbody = document.getElementById("engagement-list");
+  tbody.innerHTML = "";
+  data.forEach(ev => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${ev.titreEvent}</td>
+      <td>${ev.date}</td>
+      <td>${ev.participants}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Proposer un événement
+document.getElementById("event-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const nomAssociation = document.getElementById("nomAssociation").value.trim();
+  const titreEvent = document.getElementById("titreEvent").value.trim();
+  const description = document.getElementById("descriptionEvent").value.trim();
+  const date = document.getElementById("dateEvent").value;
+
+  if (!nomAssociation || !titreEvent || !date) return;
+
+  const res = await fetch("/associations/propose-event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ nomAssociation, titreEvent, description, date })
+  });
+
+  const result = await res.json();
+  const msg = document.getElementById("event-message");
+  if (res.ok) {
+    msg.textContent = result.message;
+    msg.style.color = "#1b5e20";
+    document.getElementById("event-form").reset();
+    loadEngagement(); // rafraîchir le suivi
+  } else {
+    msg.textContent = result.message || "Erreur";
+    msg.style.color = "red";
+  }
+});
+
+// Initial load
+loadPartners();
+loadEngagement();
+</script>
+</div>
+</body>
+</html>
